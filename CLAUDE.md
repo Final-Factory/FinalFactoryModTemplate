@@ -372,6 +372,12 @@ tracks the game's released versions; do not bump packages independently.
 - Doubling a value once (a vision range) that the game does not save: after a load or join it is
   back to normal. Recompute derived values every heartbeat.
 - `entity != null` on an `Entity` (a struct): always true. Compare with `Entity.Null`.
+- `lookup[entity]` (`ComponentLookup`/`BufferLookup`), `EntityManager.GetComponentData` or `SystemAPI.GetComponent` on an
+  entity that may lack the component or may be destroyed: 1.0 player builds have no Entities safety checks, so this silently
+  corrupts native memory (0.50 threw). Guard with `HasComponent`/`TryGetComponent` (`HasBuffer`/`TryGetBuffer`), and check
+  `EntityManager.Exists(entity)` (or the lookup's `Exists`) for an entity stored across frames. Wrong: `var hp = HealthLookup[target];`.
+  Right: `if (EntityManager.Exists(target) && HealthLookup.TryGetComponent(target, out var hp)) { ... }`. An entity from a query
+  that requires the component is safe.
 - `GetComponentLookup<T>(true)` (read-only) and then writing through it: throws when Unity's safety
   checks are on.
 - `RangeIndicatorData` (range rings) is retired by the game; nothing sets it. Size your ring
